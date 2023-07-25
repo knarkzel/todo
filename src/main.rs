@@ -5,25 +5,15 @@ use axum::{
 };
 use axum_error::Result;
 use serde::{Deserialize, Serialize};
-use sqlx::{migrate::MigrateDatabase, sqlite::SqlitePool, Sqlite};
+use sqlx::sqlite::SqlitePool;
 use std::net::SocketAddr;
-use tracing::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Logging and environment variables
+    // Create database with connection and share it using with_state below
     let _ = dotenv::dotenv();
-    tracing_subscriber::fmt::init();
-
-    // Create database and run migrations
     let url = std::env::var("DATABASE_URL")?;
-    if !Sqlite::database_exists(&url).await? {
-        Sqlite::create_database(&url).await?;
-    }
-
-    // Create connection and share it using with_state below
     let pool = SqlitePool::connect(&url).await?;
-    sqlx::migrate!("./migrations").run(&pool).await?;
 
     // Create router for server
     let app = Router::new()
@@ -36,7 +26,7 @@ async fn main() -> Result<()> {
 
     // Start server!
     let address = SocketAddr::from(([0, 0, 0, 0], 8000));
-    info!("Starting server on http://{address}");
+    println!("Starting server on http://{address}");
     Ok(axum::Server::bind(&address)
         .serve(app.into_make_service())
         .await?)
