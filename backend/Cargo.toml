@@ -11,6 +11,7 @@ strip = true
 # axum
 axum-error = "0.2"
 axum = { version = "0.6", features = ["form"] }
+tower-http = { version = "0.4.1", features = ["cors"] }
 
 # async
 tokio = { version = "1.29", features = ["full"] }

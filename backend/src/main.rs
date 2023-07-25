@@ -1,12 +1,14 @@
 use axum::{
     extract::{Path, State},
-    routing::get,
+    routing::{get, post},
     Form, Json, Router,
 };
+use axum::response::Redirect;
 use axum_error::Result;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqlitePool;
 use std::net::SocketAddr;
+use tower_http::cors::CorsLayer;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -18,11 +20,12 @@ async fn main() -> Result<()> {
     // Create router for server
     let app = Router::new()
         .route("/", get(list))
-        .route("/create", get(create))
+        .route("/create", post(create))
         .route("/read/:id", get(read))
-        .route("/update", get(update))
-        .route("/delete/:id", get(delete))
-        .with_state(pool);
+        .route("/update", post(update))
+        .route("/delete/:id", post(delete))
+        .with_state(pool)
+        .layer(CorsLayer::very_permissive());
 
     // Start server!
     let address = SocketAddr::from(([0, 0, 0, 0], 8000));
@@ -35,7 +38,7 @@ async fn main() -> Result<()> {
 #[derive(Deserialize)]
 struct NewTodo {
     description: String,
-    done: bool,
+    done: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -53,7 +56,7 @@ async fn list(State(pool): State<SqlitePool>) -> Result<Json<Vec<Todo>>> {
     Ok(Json(todos))
 }
 
-async fn create(State(pool): State<SqlitePool>, Form(todo): Form<NewTodo>) -> Result<String> {
+async fn create(State(pool): State<SqlitePool>, Form(todo): Form<NewTodo>) -> Result<Redirect> {
     // Create new note
     sqlx::query!(
         "INSERT INTO todos (description, done) VALUES (?, ?)",
@@ -62,7 +65,7 @@ async fn create(State(pool): State<SqlitePool>, Form(todo): Form<NewTodo>) -> Re
     )
     .execute(&pool)
     .await?;
-    Ok(format!("Succesfully inserted todo!"))
+    Ok(Redirect::to("http://localhost:5173"))
 }
 
 async fn read(State(pool): State<SqlitePool>, Path(id): Path<i64>) -> Result<Json<Todo>> {
@@ -77,23 +80,21 @@ async fn read(State(pool): State<SqlitePool>, Path(id): Path<i64>) -> Result<Jso
     Ok(Json(todo))
 }
 
-async fn update(State(pool): State<SqlitePool>, Form(todo): Form<Todo>) -> Result<String> {
+async fn update(State(pool): State<SqlitePool>, Form(todo): Form<Todo>) -> Result<Redirect> {
     // Update todo
     sqlx::query!(
         "UPDATE todos SET description = ?, DONE = ? WHERE id = ?",
         todo.description,
         todo.done,
         todo.id
-    )
-    .execute(&pool)
-    .await?;
-    Ok(format!("Succesfully updated todo!"))
+    ).execute(&pool).await?;
+    Ok(Redirect::to("http://localhost:5173"))
 }
 
-async fn delete(State(pool): State<SqlitePool>, Path(id): Path<i64>) -> Result<String> {
+async fn delete(State(pool): State<SqlitePool>, Path(id): Path<i64>) -> Result<Redirect> {
     // Update todo
     sqlx::query!("DELETE FROM todos WHERE id = ?", id)
         .execute(&pool)
         .await?;
-    Ok(format!("Succesfully deleted todo!"))
+    Ok(Redirect::to("http://localhost:5173"))
 }
