@@ -13,11 +13,7 @@
 
   // Update todo
   async function updateTodo(todo: Todo) {
-    await fetch(
-      `http://0.0.0.0:8000/update?id=${todo.id}&description=${todo.description}&done=${
-        todo.done ? "true" : "false"
-      }`
-    );
+    await fetch(`http://0.0.0.0:8000/update?id=${todo.id}&description=${todo.description}&done=${todo.done}`);
   }
 </script>
 
