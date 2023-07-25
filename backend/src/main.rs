@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
         .route("/", get(list))
         .route("/create", post(create))
         .route("/read/:id", get(read))
-        .route("/update", post(update))
+        .route("/update", get(update))
         .route("/delete/:id", post(delete))
         .with_state(pool)
         .layer(CorsLayer::very_permissive());
@@ -38,7 +38,6 @@ async fn main() -> Result<()> {
 #[derive(Deserialize)]
 struct NewTodo {
     description: String,
-    done: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -59,9 +58,8 @@ async fn list(State(pool): State<SqlitePool>) -> Result<Json<Vec<Todo>>> {
 async fn create(State(pool): State<SqlitePool>, Form(todo): Form<NewTodo>) -> Result<Redirect> {
     // Create new note
     sqlx::query!(
-        "INSERT INTO todos (description, done) VALUES (?, ?)",
+        "INSERT INTO todos (description) VALUES (?)",
         todo.description,
-        todo.done
     )
     .execute(&pool)
     .await?;
