@@ -1620,6 +1620,7 @@ dependencies = [
  "axum",
  "axum-error",
  "dotenv",
+ "libsqlite3-sys",
  "serde",
  "sqlx",
  "tokio",
