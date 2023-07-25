@@ -27,11 +27,11 @@ async fn main() -> Result<()> {
 
     // Create router for server
     let app = Router::new()
+        .route("/", get(list))
         .route("/create", get(create))
         .route("/read/:id", get(read))
         .route("/update", get(update))
         .route("/delete/:id", get(delete))
-        .route("/list", get(list))
         .with_state(pool);
 
     // Start server!
@@ -53,6 +53,14 @@ struct Todo {
     id: i64,
     description: String,
     done: bool,
+}
+
+async fn list(State(pool): State<SqlitePool>) -> Result<Json<Vec<Todo>>> {
+    // List all notes
+    let todos = sqlx::query_as!(Todo, "SELECT id, description, done FROM todos ORDER BY id")
+        .fetch_all(&pool)
+        .await?;
+    Ok(Json(todos))
 }
 
 async fn create(State(pool): State<SqlitePool>, Form(todo): Form<NewTodo>) -> Result<String> {
@@ -98,12 +106,4 @@ async fn delete(State(pool): State<SqlitePool>, Path(id): Path<i64>) -> Result<S
         .execute(&pool)
         .await?;
     Ok(format!("Succesfully deleted todo!"))
-}
-
-async fn list(State(pool): State<SqlitePool>) -> Result<Json<Vec<Todo>>> {
-    // List all notes
-    let todos = sqlx::query_as!(Todo, "SELECT id, description, done FROM todos ORDER BY id")
-        .fetch_all(&pool)
-        .await?;
-    Ok(Json(todos))
 }
