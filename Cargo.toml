@@ -1,0 +1,27 @@
+[package]
+name = "todo"
+version = "0.1.0"
+edition = "2021"
+
+[profile.release]
+lto = true
+strip = true
+
+[dependencies]
+# axum
+axum-error = "0.2"
+axum = { version = "0.6", features = ["form"] }
+
+# logging
+tracing = "0.1"
+tracing-subscriber = "0.3"
+
+# async
+tokio = { version = "1.29", features = ["full"] }
+
+# database
+dotenv = "0.15"
+sqlx = { version = "0.7", features = ["runtime-tokio", "tls-rustls", "sqlite"] }
+
+# serialization
+serde = { version = "1.0", features = ["derive"] }
